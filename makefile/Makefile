@@ -9,10 +9,10 @@ CPPFLAGS = -g -Og -Wall -Wextra \
 
 LDFLAGS = -L$(MUDUO_LIB) -lmuduo_net -lmuduo_base -lpthread -lrt
 
-all: prog_self_defined prog_download_server_myself_version1 prog_download_server_official_version1
+all: prog_self_defined prog_download_server_myself_version1 prog_download_server_official_version1 prog_download_server_myself_version2 prog_download_server_offcial_version2
 
 clean:
-	rm -f prog_self_defined core prog_download_server_myself_version1 prog_download_server_official_version1
+	rm -f prog_self_defined core prog_download_server_myself_version1 prog_download_server_myself_version2 prog_download_server_official_version2 prog_download_server_official_version1
 
 prog_self_defined: $(SRC)/echo_myself.cc $(SRC)/daytime_myself.cc $(SRC)/server_main.cpp
 	g++ $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
@@ -21,6 +21,12 @@ prog_download_server_myself_version1: $(SRC)/download_myself.cpp
 	g++ $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 
 prog_download_server_official_version1: $(SRC)/download.cc
+	g++ $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
+	
+prog_download_server_myself_version2: $(SRC)/download2_myself.cc
+	g++ $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
+
+prog_download_server_official_version2: $(SRC)/download2.cc
 	g++ $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 
 .PHONY: all clean
