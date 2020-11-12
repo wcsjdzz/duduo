@@ -18,6 +18,7 @@ public:
 	explicit LengthHeaderCodec(const MessageCallbackFunc &func): messageCallback_(func)
 	{}
 
+	// This function means data comming indeed;
 	void onMessage(const muduo::net::TcpConnectionPtr &conn, muduo::net::Buffer *buf, muduo::Timestamp time){
 		// LOG_INFO << " buf->readableBytes() is " << buf->readableBytes(); // test, to show if data is accepted;
 		// above LOG_INFO is OK, so bug comes below;

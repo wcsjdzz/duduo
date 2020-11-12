@@ -12,10 +12,10 @@ LDFLAGS = -L$(MUDUO_LIB) -lmuduo_net -lmuduo_base -lpthread -lrt
 
 # FIXME: download server is now commented, better find a new solution;
 # all: prog_self_defined prog_download_server_myself_version1 prog_download_server_official_version1 prog_download_server_myself_version2 prog_download_server_offcial_version2 prog_download_server_myself_version3
-all: prog_asio_server_myself prog_asio_client_myself
+all: prog_asio_server_myself prog_asio_client_myself echo_server_time_wheel_myself
 
 clean:
-	rm -f prog_self_defined core prog_download_server_myself_version1 prog_download_server_myself_version2 prog_download_server_official_version2 prog_download_server_official_version1 prog_download_server_myself_version3 prog_asio_server_myself prog_asio_client_myself
+	rm -f prog_self_defined core prog_download_server_myself_version1 prog_download_server_myself_version2 prog_download_server_official_version2 prog_download_server_official_version1 prog_download_server_myself_version3 prog_asio_server_myself prog_asio_client_myself echo_server_time_wheel_myself
 
 prog_self_defined: $(SRC)/echo_myself.cc $(SRC)/daytime_myself.cc $(SRC)/server_main.cpp
 	g++ $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
@@ -40,6 +40,9 @@ prog_asio_server_myself: $(SRC)/asio/chat_server_myself.cc $(SRC)/asio/LengthHea
 	g++ $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 
 prog_asio_client_myself: $(SRC)/asio/chat_client_myself.cc $(SRC)/asio/LengthHeaderCodec.h
+	g++ $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
+
+echo_server_time_wheel_myself: $(SRC)/time_wheel/echo_server.cc 
 	g++ $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 
 .PHONY: all clean
