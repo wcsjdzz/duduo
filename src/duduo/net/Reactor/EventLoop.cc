@@ -1,6 +1,9 @@
 #include "EventLoop.h"
+#include "TimerId.h"
+#include "TimerQueue.h"
 #include "Channel.h"
 #include "Poller.h"
+#include "TimerQueue.h"
 #include <muduo/base/Thread.h>
 #include <muduo/base/Logging.h>
 
@@ -11,7 +14,8 @@ EventLoop::EventLoop():
   isLoopping_(false),
   threadId_(muduo::CurrentThread::tid()),
   maxWaitTimeM(10000),
-  pollerPtr_(new Poller (this))
+  pollerPtr_(new Poller (this)),
+  timerQueue_(new TimerQueue (this))
 {
   if(loopOfCurrentThread_){
     LOG_FATAL << "Already has an EventLoop!";
@@ -41,6 +45,22 @@ void EventLoop::loop(){
   isLoopping_ = false;
   LOG_INFO << "EventLoop::loop() stopped";
 }
+
+TimerId EventLoop::runAt(const muduo::Timestamp &time, const TimerCallback &cb){
+  return timerQueue_->addTimer(cb, time, 0.0);
+}
+
+TimerId EventLoop::runAfter(double delay, const TimerCallback &cb){
+  muduo::Timestamp when(muduo::addTime(muduo::Timestamp::now(), delay));
+  return runAt(when, cb);
+}
+
+TimerId EventLoop::runEvery(double interval, const TimerCallback &cb){
+  muduo::Timestamp time(muduo::Timestamp::now());
+  return timerQueue_->addTimer(cb, time, interval);
+}
+
+
 
 void EventLoop::assertInLoopThread() {
   assert(threadId_ == muduo::CurrentThread::tid());
