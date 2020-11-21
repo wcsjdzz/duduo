@@ -7,11 +7,11 @@
 __thread EventLoop * loopOfCurrentThread_ = 0;
 
 EventLoop::EventLoop():
-  pollerPtr_(new Poller (this)),
   quit_(false),
   isLoopping_(false),
   threadId_(muduo::CurrentThread::tid()),
-  maxWaitTimeM(10000)
+  maxWaitTimeM(10000),
+  pollerPtr_(new Poller (this))
 {
   if(loopOfCurrentThread_){
     LOG_FATAL << "Already has an EventLoop!";
@@ -30,10 +30,11 @@ void EventLoop::loop(){
   assert(!isLoopping_);
   assertInLoopThread();
   isLoopping_ = true;
+  quit_ = false;
   while(!quit_){
     activeChannels_.clear();
     pollerPtr_->poll(maxWaitTimeM, &activeChannels_);
-    for(auto ch: activeChannels_){
+    for(auto &ch: activeChannels_){
       ch->handleEvents();
     }
   }

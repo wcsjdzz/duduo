@@ -13,11 +13,11 @@ class EventLoop
   using ChannelVec = std::vector<Channel *>;
 private:
   ChannelVec activeChannels_;
-  std::unique_ptr<Poller> pollerPtr_;
   bool quit_; // should be atomatic
   bool isLoopping_;
   const pid_t threadId_; // notes of IO thread
   int maxWaitTimeM;
+  std::unique_ptr<Poller> pollerPtr_;
 
   void assertInLoopThread();
 

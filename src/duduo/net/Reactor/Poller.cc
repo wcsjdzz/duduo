@@ -46,9 +46,11 @@ void Poller::poll(int maxWaitTimeM, ChannelVec *activeChannels){
 
 void Poller::fillActiveChannels(int activeNum, ChannelVec *activeChannels){
   for(const auto &tmp: pollfds_){
-    if(!activeNum)  break;
-    if(tmp.revents){
+    if(activeNum<=0)  break;
+    if(tmp.revents>0){
+      assert(channels_.find(tmp.fd) != channels_.end());
       --activeNum;
+      channels_[tmp.fd]->set_revent(tmp.revents); // revent of channel should be updated
       activeChannels->push_back(channels_[tmp.fd]);
     }
   }

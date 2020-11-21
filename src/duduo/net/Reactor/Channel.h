@@ -28,10 +28,7 @@ private:
 
 public:
   Channel(EventLoop *loop, int fd);
-  ~Channel()
-  {
-
-  }
+  ~Channel();
 
   int fd() const {
     return fd_;
@@ -62,8 +59,7 @@ public:
     update();
   }
   void set_revent(int revents){
-    revents = revents;
-    update();
+    revents_ = revents;
   }
 
   void setErrorCallback(const eventCallback cb){

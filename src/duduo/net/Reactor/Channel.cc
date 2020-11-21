@@ -17,6 +17,10 @@ Channel::Channel(EventLoop *loop, int fd):
 
 }
 
+Channel::~Channel() {
+
+}
+
 void Channel::handleEvents() {
   if(revents_ & (POLLNVAL|POLLERR)){
     printf("error event comes\n");
