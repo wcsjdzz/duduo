@@ -13,12 +13,14 @@ Poller::~Poller() {
 }
 
 void Poller::updateChannel(Channel *ch){
+  //printf("Starting updateChannel\n");
   if(ch->index() < 0){ // this channel is a new one
     assert(channels_.find(ch->fd()) == channels_.end());
     struct pollfd tmp;
     tmp.events = ch->events();
-    tmp.revents = ch->revents();
+    tmp.revents = 0;
     tmp.fd = ch->fd();
+    //printf("the fd of updated Channel is %d\n", tmp.fd);
     pollfds_.push_back(tmp);
     channels_[tmp.fd] = ch;
     ch->set_index(pollfds_.size()-1);
@@ -26,11 +28,12 @@ void Poller::updateChannel(Channel *ch){
     assert(channels_.find(ch->fd()) != channels_.end());
     struct pollfd &tmp = pollfds_[ch->index()];
     tmp.events = ch->events();
-    tmp.revents = ch->revents();
+    tmp.revents = 0;
     if(ch->isNoneEvent()){
       tmp.fd = -1; // no event under watched, so set -1
     }
   }
+  //printf("updateChannel done, now the size of pollfds_ is %lu\n", pollfds_.size());
 }
 
 void Poller::poll(int maxWaitTimeM, ChannelVec *activeChannels){

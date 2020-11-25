@@ -2,6 +2,7 @@
 #define EVENTLOOP_H
 
 #include <muduo/base/Timestamp.h>
+#include <muduo/base/Mutex.h>
 
 #include <vector>
 #include <memory>
@@ -12,10 +13,11 @@ class Poller;
 class TimerQueue;
 class TimerId;
 
+
 // core of Reactor
 class EventLoop
 {
-  using TimerCallback = std::function<void()>;
+  using Callback = std::function<void()>;
   using ChannelVec = std::vector<Channel *>;
 private:
   ChannelVec activeChannels_;
@@ -26,26 +28,40 @@ private:
   std::unique_ptr<Poller> pollerPtr_;
   std::unique_ptr<TimerQueue> timerQueue_;
 
-  void assertInLoopThread();
+
+  int wakeupFd_; // wake up IO thread which is blocked in IO multiplexing
+  std::unique_ptr<Channel> wakeupChannel_;
+  void handleRead();
+
+  std::vector<Callback> funcQueue; // store the callback function in queue
+  bool isExecuteQueueFunc;
+
+  void queueInLoop(const Callback &cb);
+  void executeQueueFunctions();
+
+  muduo::MutexLock mutex_;
 
 public:
   EventLoop();
   ~EventLoop();
+
+  bool isInLoopThread();
+  void assertInLoopThread();
 
   // precondition:
   // 1. should be IO thread
   // 2. cannot call loop() repeately
   void loop();
 
-  TimerId runAt(const muduo::Timestamp &time, const TimerCallback &cb);
-  TimerId runAfter(double delay, const TimerCallback &cb);
-  TimerId runEvery(double interval, const TimerCallback &cb);
+  TimerId runAt(const muduo::Timestamp &time, const Callback &cb);
+  TimerId runAfter(double delay, const Callback &cb);
+  TimerId runEvery(double interval, const Callback &cb);
 
+  void wakeup(); // let IO thread wake up in poll()
+  void runInLoop(const Callback &cb);
 
   void updateChannel(Channel *ch);
-  void quit() {
-    quit_ =true;
-  }
+  void quit();
 };
 
 #endif /* EVENTLOOP_H */

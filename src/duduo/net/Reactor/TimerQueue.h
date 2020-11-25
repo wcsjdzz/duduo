@@ -22,9 +22,11 @@ private:
   EventLoop *loop_;
   const int timerfd_;
   TimerList timers_;
-  Channel timerfdChannel;
+  Channel timerfdChannel_;
 
   std::vector<Entry> getExpired(muduo::Timestamp now);
+  bool insert(Timer *);
+  void resetTimerfd(muduo::Timestamp when);
   
 
 public:
@@ -32,6 +34,9 @@ public:
   ~TimerQueue();
 
   TimerId addTimer(const TimerCallback cb, muduo::Timestamp time, double interval);
+  void addTimerInLoop(Timer *timer);
+  void handleRead();
+  void reset(std::vector<Entry> &expired, muduo::Timestamp now);
 
 };
 

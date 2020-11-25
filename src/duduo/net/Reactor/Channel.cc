@@ -23,15 +23,16 @@ Channel::~Channel() {
 
 void Channel::handleEvents() {
   if(revents_ & (POLLNVAL|POLLERR)){
-    printf("error event comes\n");
+    //printf("error event comes\n");
     if(errorCallback_) errorCallback_();
   }
   if(revents_ & (POLLIN | POLLPRI | POLLRDHUP)){
-    printf("read event comes\n");
+    //printf("read event comes\n");
     if(readCallback_) readCallback_();
+    //printf("readCallback() in Channel is done\n");
   }
   if(revents_ & POLLOUT){
-    printf("write event comes\n");
+    //printf("write event comes\n");
     if(writeCallback_) writeCallback_();
   }
 }

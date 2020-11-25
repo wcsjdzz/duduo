@@ -29,9 +29,14 @@ public:
   int64_t sequence() const {
     return sequence_;
   }
+  bool repeat() const {
+    return repeat_;
+  }
 
   void run() {
+    //printf("run callback\n");
     callback_();
+    //printf("callback runned\n");
   }
 
   void restart(muduo::Timestamp when);
