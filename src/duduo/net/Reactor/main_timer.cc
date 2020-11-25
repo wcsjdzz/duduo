@@ -11,6 +11,7 @@ void timeOutFunc(){
 int main(int argc, char *argv[])
 {
   EventLoop loop;
+  // g_loop = &loop;
   loop.runAfter(5, &timeOutFunc);
   loop.loop();
   return 0;
