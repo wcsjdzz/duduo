@@ -1,5 +1,6 @@
 #include "Channel.h"
 #include "EventLoop.h"
+#include <muduo/base/Logging.h>
 #include <poll.h>
 
 // static variable should have a initialization
@@ -10,33 +11,55 @@ const int Channel::kWriteEvent = POLLOUT;
 Channel::Channel(EventLoop *loop, int fd):
   ownerLoop_(loop),
   fd_(fd),
-  events_(0),
+  events_(kNoneEvent),
   revents_(0),
   index_(-1)
 {
 
 }
 
+// dtor of Channel does not close file descriptor
 Channel::~Channel() {
-
+  // must not be handing event when destructing channel
+  assert(!isHandling_);
 }
 
-void Channel::handleEvents() {
+void Channel::handleEvents(const muduo::Timestamp &now) {
+  isHandling_ = true;
   if(revents_ & (POLLNVAL|POLLERR)){
     //printf("error event comes\n");
     if(errorCallback_) errorCallback_();
   }
+  if( (revents_&POLLHUP) && !(revents_&POLLIN) ){
+    LOG_WARN << "Channel - handling POLLHUP event";
+    if(closeCallback_) closeCallback_();
+  }
   if(revents_ & (POLLIN | POLLPRI | POLLRDHUP)){
     //printf("read event comes\n");
-    if(readCallback_) readCallback_();
+    if(readCallback_) readCallback_(now);
     //printf("readCallback() in Channel is done\n");
   }
   if(revents_ & POLLOUT){
     //printf("write event comes\n");
     if(writeCallback_) writeCallback_();
   }
+  isHandling_ = false;
 }
 
 void Channel::update(){
   ownerLoop_->updateChannel(this);
+}
+
+void Channel::remove(){
+  assert(isNoneEvent());
+  ownerLoop_->removeChannel(this);
+}
+
+void Channel::disableAll(){
+  events_ = kNoneEvent;
+  update();
+}
+
+void Channel::disableWrite(){
+  events_ = events_ & (~kWriteEvent);
 }

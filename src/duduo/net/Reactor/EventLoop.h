@@ -36,7 +36,6 @@ private:
   std::vector<Callback> funcQueue; // store the callback function in queue
   bool isExecuteQueueFunc;
 
-  void queueInLoop(const Callback &cb);
   void executeQueueFunctions();
 
   muduo::MutexLock mutex_;
@@ -52,6 +51,7 @@ public:
   // 1. should be IO thread
   // 2. cannot call loop() repeately
   void loop();
+  void queueInLoop(const Callback &cb);
 
   TimerId runAt(const muduo::Timestamp &time, const Callback &cb);
   TimerId runAfter(double delay, const Callback &cb);
@@ -62,6 +62,7 @@ public:
 
   void updateChannel(Channel *ch);
   void quit();
+  void removeChannel(Channel *ch);
 };
 
 #endif /* EVENTLOOP_H */

@@ -4,6 +4,7 @@
 #include <vector>
 #include <map>
 #include <muduo/base/noncopyable.h>
+#include <muduo/base/Timestamp.h>
 
 class Channel;
 class EventLoop;
@@ -23,7 +24,8 @@ public:
   ~Poller();
 
   void updateChannel(Channel *);
-  void poll(int maxWaitTimeM, ChannelVec *activeChannels);
+  void removeChannel(Channel *);
+  muduo::Timestamp poll(int maxWaitTimeM, ChannelVec *activeChannels);
   void fillActiveChannels(int activeNum, ChannelVec *activeChannels);
 };
 

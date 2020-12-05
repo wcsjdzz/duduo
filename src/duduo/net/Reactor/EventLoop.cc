@@ -50,9 +50,9 @@ void EventLoop::loop(){
   quit_ = false;
   while(!quit_){
     activeChannels_.clear();
-    pollerPtr_->poll(maxWaitTimeM, &activeChannels_);
+    auto receiveTime = pollerPtr_->poll(maxWaitTimeM, &activeChannels_);
     for(auto &ch: activeChannels_){
-      ch->handleEvents();
+      ch->handleEvents(receiveTime);
     }
     executeQueueFunctions();
   }
@@ -85,6 +85,11 @@ void EventLoop::assertInLoopThread() {
 
 void EventLoop::updateChannel(Channel *ch){
   pollerPtr_->updateChannel(ch);
+}
+
+void EventLoop::removeChannel(Channel *ch){
+  assertInLoopThread();
+  pollerPtr_->removeChannel(ch);
 }
 
 void EventLoop::wakeup(){
