@@ -48,6 +48,7 @@ void TcpServer::onNewConnection(int peersockfd, const muduo::net::InetAddress &p
   newConn->setConnectionCallback(connectionCallback_);
   newConn->setMessageCallback(messageCallback_);
   newConn->setCloseCallback(std::bind(&TcpServer::removeConnection, this, _1));
+  newConn->setWriteCompleteCallback(writeCompleteCallback_);
   // newConn->connectionEstablished();
   // better way is to make connectionEstablished run in IO thread
   loop_->runInLoop(std::bind(&TcpConnection::connectionEstablished, newConn));

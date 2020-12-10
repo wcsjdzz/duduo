@@ -6,9 +6,18 @@
 #include "TimerQueue.h"
 #include <muduo/base/Thread.h>
 #include <muduo/base/Logging.h>
+#include <signal.h>
 #include <sys/eventfd.h>
 
 __thread EventLoop * loopOfCurrentThread_ = 0;
+
+// ignore SIGPIPE to avoid exiting progress unexpectedly
+struct ignSigPipe{
+  ignSigPipe(){
+    ::signal(SIGPIPE, SIG_IGN);
+  }
+};
+ignSigPipe ignSigPipe_;
 
 int creatEventFd(){
   return ::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC); // FIXME - 0 or other?

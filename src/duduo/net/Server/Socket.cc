@@ -54,3 +54,13 @@ void Socket::setReusePort(bool on){
     LOG_ERROR << "setReuseAddr falied";
   }
 }
+
+void Socket::setTcpNoDealy(bool on){
+  socklen_t tmp = on ? 1 : 0;
+  ::setsockopt(sockfd_, IPPROTO_TCP, TCP_NODELAY, &tmp, sizeof tmp);
+}
+
+void Socket::setKeepAlive(bool on){
+  socklen_t tmp = on ? 1 : 0;
+  ::setsockopt(sockfd_, IPPROTO_TCP, SO_KEEPALIVE, &tmp, sizeof tmp);
+}

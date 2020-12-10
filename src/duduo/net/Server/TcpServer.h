@@ -17,6 +17,8 @@ class TcpServer : boost::noncopyable
 {
   using ConnectionCallback = std::function<void (const TcpConnectionPtr &)>;
   using MessageCallback = std::function<void (const TcpConnectionPtr &, muduo::net::Buffer *, muduo::Timestamp)>;
+  using WriteCompleteCallback = std::function<void (const TcpConnectionPtr &)>;
+  using HighWaterCallback = std::function<void (const TcpConnectionPtr &)>;
 private:
   EventLoop *loop_;
   const std::string name_;
@@ -25,6 +27,8 @@ private:
   std::map<std::string, TcpConnectionPtr> connections_;
   ConnectionCallback connectionCallback_;
   MessageCallback messageCallback_;
+  WriteCompleteCallback writeCompleteCallback_; // called when outputBuffer_ is empty after `::write`
+  HighWaterCallback highWaterCallback_;
 
   static int connectionIndex_;
 
@@ -40,6 +44,7 @@ public:
   void start(); // user interface, enable the socket listening
   void setConnectionCallback(const ConnectionCallback &cb);
   void setMessageCallback(const MessageCallback &cb);
+  void setWriteCompleteCallback(const WriteCompleteCallback &cb);
 };
 
 #endif /* TCPSERVER_H */

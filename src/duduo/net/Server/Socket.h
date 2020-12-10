@@ -25,6 +25,9 @@ public:
 
   // SO_REUSEPORT
   void setReusePort(bool on);
+
+  void setTcpNoDealy(bool on);
+  void setKeepAlive(bool on);
   explicit Socket(const int &fd);
   ~Socket();
 };

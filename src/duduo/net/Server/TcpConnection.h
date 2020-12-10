@@ -36,6 +36,8 @@ class TcpConnection : boost::noncopyable,
   // using MessageCallback = std::function<void (const TcpConnectionPtr &, const std::string &)>;
   using MessageCallback = std::function<void (const TcpConnectionPtr &, muduo::net::Buffer *, muduo::Timestamp)>;
   using CloseCallback = std::function<void (const TcpConnectionPtr &)>;
+  using WriteCompleteCallback = std::function<void (const TcpConnectionPtr &)>;
+  using HighWaterCallback = std::function<void (const TcpConnectionPtr &)>;
 private:
   EventLoop *loop_;
   StateEnum state_;
@@ -56,6 +58,8 @@ private:
   ConnectionCallback connectionCallback_;
   MessageCallback messageCallback_;
   CloseCallback closeCallback_;
+  WriteCompleteCallback writeCompleteCallback_; // called when outputBuffer_ is empty after `::write`
+  HighWaterCallback highWaterCallback_;
 
   void shutdown();
   void shutdownInLoop();
@@ -83,10 +87,14 @@ public:
   {
     closeCallback_ = cb;
   }
+  void setWriteCompleteCallback(const WriteCompleteCallback &cb);
+  void setHighWaterCallback(const WriteCompleteCallback &cb);
 
   void setState(const StateEnum &st){
     state_ = st;
   }
+  void setTcpNoDealy(bool on);
+  void setKeepAlive(bool on);
 
   void connectionEstablished();
   void connectionDestryed();

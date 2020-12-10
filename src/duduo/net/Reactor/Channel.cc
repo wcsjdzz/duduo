@@ -13,7 +13,8 @@ Channel::Channel(EventLoop *loop, int fd):
   fd_(fd),
   events_(kNoneEvent),
   revents_(0),
-  index_(-1)
+  index_(-1), 
+  isHandling_(false)
 {
 
 }
@@ -27,7 +28,6 @@ Channel::~Channel() {
 void Channel::handleEvents(const muduo::Timestamp &now) {
   isHandling_ = true;
   if(revents_ & (POLLNVAL|POLLERR)){
-    //printf("error event comes\n");
     if(errorCallback_) errorCallback_();
   }
   if( (revents_&POLLHUP) && !(revents_&POLLIN) ){
@@ -35,12 +35,9 @@ void Channel::handleEvents(const muduo::Timestamp &now) {
     if(closeCallback_) closeCallback_();
   }
   if(revents_ & (POLLIN | POLLPRI | POLLRDHUP)){
-    //printf("read event comes\n");
     if(readCallback_) readCallback_(now);
-    //printf("readCallback() in Channel is done\n");
   }
   if(revents_ & POLLOUT){
-    //printf("write event comes\n");
     if(writeCallback_) writeCallback_();
   }
   isHandling_ = false;

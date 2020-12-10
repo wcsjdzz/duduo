@@ -8,20 +8,24 @@
 // forward declaration, avoid dependency
 class EventLoop;
 
-// Dispatch of event
+// Channel - Dispatch of event
+//           manage file descriptor and corresponding event callback
 class Channel : boost::noncopyable
 {
   using EventCallback = std::function<void()>;
+  using WriteCallback = EventCallback;
+  using ErrorCallback = EventCallback;
+  using CloseCallback = EventCallback;
   using ReadEventCallback = std::function<void (muduo::Timestamp receiveTime)>;
 private:
-  EventLoop *ownerLoop_; // ownerLoop_ owns this Channel
-  int fd_; // just as fd in struct pollfd
+  EventLoop *ownerLoop_;
+  int fd_;
   int events_;
   int revents_;
 
-  int index_; // necessary in Poller, -1 as inactivated
+  int index_; // `ownerLoop_->Poller->pollfds_[Channel::index_].fd` is equal to `Channel::fd_`;
 
-  bool isHandling_;
+  bool isHandling_; // indicate whether this Channel is handling event
 
   static const int kNoneEvent;
   static const int kReadEvent;
@@ -29,8 +33,8 @@ private:
 
   EventCallback errorCallback_;
   ReadEventCallback readCallback_;
-  EventCallback writeCallback_;
-  EventCallback closeCallback_;
+  WriteCallback writeCallback_;
+  CloseCallback closeCallback_;
 
 public:
   Channel(EventLoop *loop, int fd);
@@ -74,20 +78,22 @@ public:
   void disableAll();
   void disableWrite();
 
-  void setErrorCallback(const EventCallback cb){
+  void setErrorCallback(const ErrorCallback cb){
     errorCallback_ = cb;
   }
   void setReadCallback(const ReadEventCallback cb){
     readCallback_ = cb;
   }
-  void setWriteCallback(const EventCallback cb){
+  void setWriteCallback(const WriteCallback cb){
     writeCallback_ = cb;
+  }
+  void setCloseCallback(const CloseCallback cb){
+    closeCallback_ = cb;
   }
 
   void handleEvents(const muduo::Timestamp &now);
-  void update(); // Channel::update() ==> EventLoop::updateChannel()
-  // ==> Poller::updateChannel()
-  void remove();
+  void update(); // Channel::update() ==> EventLoop::updateChannel() ==> update pollfds_ in EventLoop::Poller
+  void remove(); // remove pollfds_ in EventLoop::Poller
 };
 
 #endif /* CHANNEL_H */

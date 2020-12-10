@@ -24,6 +24,7 @@ TcpConnection::TcpConnection(EventLoop *loop,
   sockChannel_->setWriteCallback(
       std::bind(&TcpConnection::handleWrite, this));
   // state_ = kConnected;
+  sockChannel_->setCloseCallback(std::bind(&TcpConnection::handleClose, this));
 }
 
 TcpConnection::~TcpConnection(){
@@ -40,9 +41,18 @@ void TcpConnection::setMessageCallback(const MessageCallback &cb){
   messageCallback_ = cb;
 }
 
+void TcpConnection::setWriteCompleteCallback(const WriteCompleteCallback &cb){
+  writeCompleteCallback_ = cb;
+}
+
+void TcpConnection::setHighWaterCallback(const WriteCompleteCallback &cb){
+  highWaterCallback_ = cb;
+}
+
 void TcpConnection::handleRead(muduo::Timestamp receiveTime){
   /* char buf[65536]; */
   /* int retSz = ::read(socket_->fd(), buf, sizeof buf); */
+  loop_->assertInLoopThread(); // handle*() is called in IO thread, no doubt
   int errorFlag = 0;
   int retSz = inputBuffer_.readFd(socket_->fd(), &errorFlag);
   if(retSz > 0){
@@ -75,6 +85,9 @@ void TcpConnection::handleWrite(){
     outputBuffer_.retrieve(ret);
     if(ret == leftMsgSz){ // or outputBuffer_.readableBytes() == 0
       sockChannel_->disableWrite();
+      if(writeCompleteCallback_){
+        loop_->queueInLoop(std::bind(&TcpConnection::writeCompleteCallback_, shared_from_this()));
+      }
       if(state_ == kDisconnecting){ // only when msg has send over then WR can be shut down
         shutdownInLoop();
       } 
@@ -118,6 +131,8 @@ void TcpConnection::sendInLoop(const std::string &msg){
     if(!sockChannel_->isWriting()){ // enable writable only when msg hasn't been send over 
       sockChannel_->enableWrite();
     }
+  } else if(writeCompleteCallback_){
+    loop_->queueInLoop(std::bind(&TcpConnection::writeCompleteCallback_, shared_from_this()));
   }
 }
 
@@ -155,4 +170,12 @@ void TcpConnection::connectionDestryed(){
   sockChannel_->disableAll();
   connectionCallback_(shared_from_this()); // why calling this callback?
   sockChannel_->remove(); // calling EventLoop->removeChannel()
+}
+
+void TcpConnection::setTcpNoDealy(bool on){
+  socket_->setTcpNoDealy(on);
+}
+
+void TcpConnection::setKeepAlive(bool on){
+  socket_->setKeepAlive(on);
 }
