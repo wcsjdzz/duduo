@@ -2,7 +2,7 @@ MUDUO_DIR ?= $(HOME)/build/release-install-cpp11
 MUDUO_INCLUDE ?= $(MUDUO_DIR)/include
 MUDUO_LIB ?= $(MUDUO_DIR)/lib
 
-SRC=../src
+SRC=.
 
 CPPFLAGS = -g -Og -Wall -Wextra \
 					-march=native -rdynamic
