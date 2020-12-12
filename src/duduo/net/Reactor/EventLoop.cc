@@ -28,16 +28,16 @@ EventLoop::EventLoop():
   isLoopping_(false),
   threadId_(muduo::CurrentThread::tid()),
   maxWaitTimeM(10000),
-  pollerPtr_(new Poller (this)),
-  timerQueue_(new TimerQueue (this)),
+  pollerPtr_(std::make_unique<Poller>(this)),
+  timerQueue_(std::make_unique<TimerQueue>(this)),
   wakeupFd_(creatEventFd()),
-  wakeupChannel_(new Channel(this, wakeupFd_)),
+  wakeupChannel_(std::make_unique<Channel>(this, wakeupFd_)),
   funcQueue(),
   isExecuteQueueFunc(false),
   mutex_()
 {
   if(loopOfCurrentThread_){
-    LOG_FATAL << "Already has an EventLoop!";
+    LOG_FATAL << "EventLoop::EventLoop() - Already has an EventLoop!";
   } else {
     loopOfCurrentThread_ = this;
   }
@@ -49,7 +49,7 @@ EventLoop::~EventLoop(){
   LOG_INFO << "EventLoop " << this << " deconstructed in thread " 
     << muduo::CurrentThread::tid();
   loopOfCurrentThread_ = 0;
-  ::close(wakeupFd_); // should close this eventfd
+  ::close(wakeupFd_); // who handles this fd, who close it
 }
 
 void EventLoop::loop(){
@@ -66,7 +66,7 @@ void EventLoop::loop(){
     executeQueueFunctions();
   }
   isLoopping_ = false;
-  LOG_INFO << "EventLoop::loop() stopped";
+  LOG_INFO << "EventLoop::loop() - stopped looping";
 }
 
 TimerId EventLoop::runAt(const muduo::Timestamp &time, const Callback &cb){
@@ -102,10 +102,8 @@ void EventLoop::removeChannel(Channel *ch){
 }
 
 void EventLoop::wakeup(){
-  //printf("starting wakeup()\n");
-  int64_t value = 0; // send this meaningless value
+  int64_t value = 0; // send a meaningless value
   write(wakeupFd_, &value, sizeof value);
-  //printf("wakeup() done\n");
 }
 
 void EventLoop::handleRead(){
@@ -115,7 +113,6 @@ void EventLoop::handleRead(){
 
 void EventLoop::runInLoop(const Callback &cb){
   if(isInLoopThread()){
-    //printf("runInLoop() - is in IO thread\n");
     cb();
   } else {
     queueInLoop(cb);
@@ -139,8 +136,9 @@ void EventLoop::executeQueueFunctions(){
   isExecuteQueueFunc = true;
   std::vector<Callback> tmp;
   {
+    using std::swap; // this is the standard usage in c++ primer
     muduo::MutexLockGuard guard(mutex_);
-    std::swap(funcQueue, tmp);
+    swap(funcQueue, tmp);
   }
   for(const auto &func: tmp){
     func();
@@ -149,15 +147,10 @@ void EventLoop::executeQueueFunctions(){
 }
 
 void EventLoop::quit() {
-  //printf("starting quit()\n");
-  LOG_INFO << "EventLoop::quit() - staring";
   quit_ = true;
-  //printf("quit_ becomes true\n");
   if(!isInLoopThread()){
     // at other thread, so IO thread might be blocked in IO multiplexing
-    //printf("test -- not in the IO thread\n");
     wakeup();
-  }
-  LOG_INFO << "EventLoop::quit() - done";
-  //printf("quit() done\n");
+  } // otherwise EventLoop should quit the loop soon
+  LOG_INFO << "EventLoop::quit() - quit the loop";
 }

@@ -15,12 +15,15 @@ class TimerId;
 
 
 // core of Reactor
-class EventLoop
+class EventLoop // noncopyable
 {
   using Callback = std::function<void()>;
   using ChannelVec = std::vector<Channel *>;
 private:
-  ChannelVec activeChannels_;
+  EventLoop(const EventLoop &) = delete;
+  EventLoop &operator=(const EventLoop &) = delete;
+
+  ChannelVec activeChannels_; // to collect active fd when poll
   bool quit_; // should be atomatic
   bool isLoopping_;
   const pid_t threadId_; // notes of IO thread
@@ -29,9 +32,9 @@ private:
   std::unique_ptr<TimerQueue> timerQueue_;
 
 
-  int wakeupFd_; // wake up IO thread which is blocked in IO multiplexing
+  int wakeupFd_; // wake up IO thread which is being blocked in IO multiplexing
   std::unique_ptr<Channel> wakeupChannel_;
-  void handleRead();
+  void handleRead(); // for handle wakeup fd
 
   std::vector<Callback> funcQueue; // store the callback function in queue
   bool isExecuteQueueFunc;

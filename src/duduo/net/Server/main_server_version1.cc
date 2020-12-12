@@ -2,8 +2,8 @@
 #include "../Reactor/EventLoop.h"
 
 void connectionFunc(const TcpConnectionPtr &conn){
-  printf("A new TCP connection %s comming from %s\n", 
-      conn->name().c_str(), conn->peerAddr().toIpPort().c_str());
+  // printf("A new TCP connection %s comming from %s\n", 
+  //     conn->name().c_str(), conn->peerAddr().toIpPort().c_str());
   conn->send("this is a prompt message coming from server, indicating that the TCP connection has been establised already");
 }
 
@@ -18,7 +18,7 @@ void messageFunc(const TcpConnectionPtr &conn, muduo::net::Buffer *buf, muduo::T
 int main(int argc, char *argv[])
 {
   EventLoop loop;
-  muduo::net::InetAddress addr(2332);
+  muduo::net::InetAddress addr(45670);
   TcpServer server(&loop, addr);
   server.setConnectionCallback(&connectionFunc);
   server.setMessageCallback(&messageFunc);
