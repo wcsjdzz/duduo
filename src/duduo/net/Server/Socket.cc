@@ -18,7 +18,9 @@ Socket::~Socket(){
 }
 
 void Socket::shutdownWrite(){
-  ::shutdown(sockfd_, SHUT_WR);
+  if(::shutdown(sockfd_, SHUT_WR)){
+    LOG_ERROR << "Socket::shutdownWrite() - WRONG in ::shutdown";
+  }
 }
 
 void Socket::bindAddress(const muduo::net::InetAddress &localaddr){
@@ -42,7 +44,7 @@ void Socket::setReuseAddr(bool on){
   int len = static_cast<socklen_t>(sizeof reused);
   int ret = ::setsockopt(sockfd_, SOL_SOCKET, SO_REUSEADDR, &reused, len);
   if(ret < 0){
-    LOG_ERROR << "setReuseAddr falied";
+    LOG_ERROR << "Socket::setReusedAddr() - falied";
   }
 }
 
@@ -51,7 +53,7 @@ void Socket::setReusePort(bool on){
   int len = static_cast<socklen_t>(sizeof reused);
   int ret = ::setsockopt(sockfd_, SOL_SOCKET, SO_REUSEPORT, &reused, len);
   if(ret < 0){
-    LOG_ERROR << "setReuseAddr falied";
+    LOG_ERROR << "Socket::setReusePort() - falied";
   }
 }
 

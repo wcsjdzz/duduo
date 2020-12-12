@@ -14,14 +14,12 @@ Poller::~Poller() {
 }
 
 void Poller::updateChannel(Channel *ch){
-  //printf("Starting updateChannel\n");
   if(ch->index() < 0){ // this channel is a new one
     assert(channels_.find(ch->fd()) == channels_.end());
     struct pollfd tmp;
     tmp.events = ch->events();
     tmp.revents = 0;
     tmp.fd = ch->fd();
-    //printf("the fd of updated Channel is %d\n", tmp.fd);
     pollfds_.push_back(tmp);
     channels_[tmp.fd] = ch;
     ch->set_index(pollfds_.size()-1);
@@ -35,14 +33,13 @@ void Poller::updateChannel(Channel *ch){
     tmp.events = ch->events();
     tmp.revents = 0;
     if(ch->isNoneEvent()){
-      tmp.fd = -ch->fd() - 1; // no event under watched, so set -1
+      tmp.fd = -ch->fd() - 1; // no event under watched, so set -fd - 1
     }
   }
-  //printf("updateChannel done, now the size of pollfds_ is %lu\n", pollfds_.size());
 }
 
 void Poller::removeChannel(Channel *ch){
-  // if ch is at the end of channel_ exactly, pop the pollfd vector 
+  // if ch is at the end of channel_ exactly, pop the pollfds_ vector 
   // if not, exchange elements and pop vector
 
   ownerLoop_->assertInLoopThread();
@@ -51,7 +48,7 @@ void Poller::removeChannel(Channel *ch){
   auto fd = ch->fd();
   assert(channels_.find(fd) != channels_.end());
   assert(channels_[ch->fd()] == ch);
-  assert(ch->isNoneEvent()); // when remoce channel, is should disable all listening events
+  assert(ch->isNoneEvent()); // when removing channel, it should disable all listening events
 
   // pollfds_
   auto index = ch->index();
@@ -63,10 +60,11 @@ void Poller::removeChannel(Channel *ch){
   if(static_cast<size_t> (index) == pollfds_.size()-1){ // erase from vector<struct pollerfd>
     pollfds_.pop_back();
   } else {
+    using std::swap;
     auto endFd = pollfds_.back().fd;
-    if(endFd < 0) endFd = -endFd - 1; // to transfer it to the exact file descriptor
+    if(endFd < 0) endFd = -endFd - 1; // to transfer it to the original file descriptor
     assert(channels_.find(endFd) != channels_.end());
-    std::swap(pollfds_[index], pollfds_.back());
+    swap(pollfds_[index], pollfds_.back());
     channels_[endFd]->set_index(index);
     pollfds_.pop_back();
   }
@@ -78,7 +76,7 @@ muduo::Timestamp Poller::poll(int maxWaitTimeM, ChannelVec *activeChannels){
   if(activeNum>0){
     fillActiveChannels(activeNum, activeChannels);
   } else if(!activeNum){
-    LOG_INFO << "No active event in " << maxWaitTimeM << " m seconds";
+    LOG_INFO << "No active event in " << maxWaitTimeM << " milli seconds";
   } else {
     LOG_FATAL << "ERROR occurs when ::poll()";
   }

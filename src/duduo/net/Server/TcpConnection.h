@@ -3,7 +3,6 @@
 
 #include <memory>
 #include <functional>
-#include <boost/noncopyable.hpp>
 #include <muduo/net/InetAddress.h>
 #include <muduo/net/Buffer.h>
 #include <muduo/base/Timestamp.h>
@@ -15,7 +14,7 @@ class TcpConnection;
 using TcpConnectionPtr = std::shared_ptr<TcpConnection>;
 
 /* Attribute of TcpConnection */
-// 1. connection status: connecting, connected
+// 1. connection status: connecting, connected, disconenecting, disconnected
 // 
 // 2. name: each server could have multiple 
 //          TCP connection, so a name is identical as a flag
@@ -28,10 +27,11 @@ using TcpConnectionPtr = std::shared_ptr<TcpConnection>;
 // due to fuzzy life cycle of TCP connection,
 // using std::shared_ptr is the best method to
 // achieve thread safety
-class TcpConnection : boost::noncopyable, 
+class TcpConnection : // noncopyable
   public std::enable_shared_from_this<TcpConnection>
 {
-  enum StateEnum {kConnected, kConnecting, kDisconnected, kDisconnecting};
+  // kDisconnecting - LIKE POLLRDHUP, the write endian is closed
+  enum StateEnum {kConnecting, kConnected, kDisconnecting, kDisconnected};
   using ConnectionCallback = std::function<void (const TcpConnectionPtr &)>;
   // using MessageCallback = std::function<void (const TcpConnectionPtr &, const std::string &)>;
   using MessageCallback = std::function<void (const TcpConnectionPtr &, muduo::net::Buffer *, muduo::Timestamp)>;
@@ -39,6 +39,9 @@ class TcpConnection : boost::noncopyable,
   using WriteCompleteCallback = std::function<void (const TcpConnectionPtr &)>;
   using HighWaterCallback = std::function<void (const TcpConnectionPtr &)>;
 private:
+  TcpConnection (const TcpConnection &) = delete;
+  TcpConnection &operator=(const TcpConnection &) = delete;
+
   EventLoop *loop_;
   StateEnum state_;
   const std::string name_;
@@ -57,11 +60,10 @@ private:
   void handleClose();
   ConnectionCallback connectionCallback_;
   MessageCallback messageCallback_;
-  CloseCallback closeCallback_;
+  CloseCallback closeCallback_; // closeCallback_ is binded to TcpServer::removeChannel
   WriteCompleteCallback writeCompleteCallback_; // called when outputBuffer_ is empty after `::write`
   HighWaterCallback highWaterCallback_;
 
-  void shutdown();
   void shutdownInLoop();
 
 
@@ -83,10 +85,7 @@ public:
 
   void setConnectionCallback(const ConnectionCallback &cb);
   void setMessageCallback(const MessageCallback &cb);
-  void setCloseCallback(const CloseCallback &cb)
-  {
-    closeCallback_ = cb;
-  }
+  void setCloseCallback(const CloseCallback &cb); // used by client and server, not the normal user of net library
   void setWriteCompleteCallback(const WriteCompleteCallback &cb);
   void setHighWaterCallback(const WriteCompleteCallback &cb);
 
@@ -97,10 +96,20 @@ public:
   void setKeepAlive(bool on);
 
   void connectionEstablished();
-  void connectionDestryed();
+  void connectionDestryed(); // 1. last function called before dtor. 
+                             // 2. could be called without handleClose
+                             // 3. called in TcpServer::removeConnection
 
   void send(const std::string &msg);
   void sendInLoop(const std::string &msg);
+
+  void shutdown(); // shutdown the write edian of TCP connection, 
+                   // meaning TCP server cannot send data to client anymore, 
+                   // but the connection is still alive
+
+  EventLoop *getLoop() {
+    return loop_;
+  }
 };
 
 #endif /* TCPCONNECTION_H */

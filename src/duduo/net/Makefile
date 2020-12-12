@@ -22,7 +22,7 @@ acptDependency = $(ReactorDependency) $(acptSRC)/Acceptor.cc $(acptSRC)/Socket.c
 serverSRC=./Server
 serverDependency = $(acptDependency) $(serverSRC)/TcpServer.cc $(serverSRC)/TcpConnection.cc
 
-all : timer acceptor server1
+all : timer acceptor server1 server_muduo
 	# g++ $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 
 timer : $(ReactorDependency) $(SRC)/main_timer.cc
@@ -34,7 +34,10 @@ acceptor : $(acptDependency) $(acptSRC)/main_Acceptor.cc
 server1 : $(serverDependency) $(serverSRC)/main_server_version1.cc 
 	g++ $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 
+server_muduo : $(serverSRC)/main_server_version1.cc
+	g++ $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
+
 .PHONY: clean all
 	
 clean :
-	rm -rf reactor acceptor server1 timer
+	rm -rf reactor acceptor server1 timer server_muduo

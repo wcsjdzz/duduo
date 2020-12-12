@@ -103,12 +103,16 @@ void EventLoop::removeChannel(Channel *ch){
 
 void EventLoop::wakeup(){
   int64_t value = 0; // send a meaningless value
-  write(wakeupFd_, &value, sizeof value);
+  if(write(wakeupFd_, &value, sizeof value) < 0){
+    LOG_ERROR << "EventLoop::wakeup() - WRONG in ::write";
+  }
 }
 
 void EventLoop::handleRead(){
   int64_t value = 0;
-  read(wakeupFd_, &value, sizeof value);
+  if(read(wakeupFd_, &value, sizeof value) < 0){
+    LOG_ERROR << "EventLoop::handleRead() - WRONG in ::read";
+  }
 }
 
 void EventLoop::runInLoop(const Callback &cb){
@@ -121,7 +125,7 @@ void EventLoop::runInLoop(const Callback &cb){
 
 void EventLoop::queueInLoop(const Callback &cb){
   {
-    muduo::MutexLockGuard guard(mutex_);
+    std::lock_guard<std::mutex> guard(mutex_);
     funcQueue.push_back(cb);
   }
   if(!isInLoopThread() || isExecuteQueueFunc){
@@ -137,7 +141,7 @@ void EventLoop::executeQueueFunctions(){
   std::vector<Callback> tmp;
   {
     using std::swap; // this is the standard usage in c++ primer
-    muduo::MutexLockGuard guard(mutex_);
+    std::lock_guard<std::mutex> guard(mutex_);
     swap(funcQueue, tmp);
   }
   for(const auto &func: tmp){

@@ -2,7 +2,6 @@
 #define CHANNEL_H
 
 #include <functional>
-#include <boost/noncopyable.hpp>
 #include <muduo/base/Timestamp.h>
 
 // forward declaration, avoid dependency
@@ -10,7 +9,7 @@ class EventLoop;
 
 // Channel - Dispatch of event
 //           manage file descriptor and corresponding event callback
-class Channel : boost::noncopyable
+class Channel // noncopyable
 {
   using EventCallback = std::function<void()>;
   using WriteCallback = EventCallback;
@@ -18,6 +17,9 @@ class Channel : boost::noncopyable
   using CloseCallback = EventCallback;
   using ReadEventCallback = std::function<void (muduo::Timestamp receiveTime)>;
 private:
+  Channel(const Channel &) = delete;
+  Channel &operator=(const Channel &) = delete;
+
   EventLoop *ownerLoop_;
   int fd_;
   int events_;

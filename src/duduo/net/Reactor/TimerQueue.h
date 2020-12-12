@@ -13,12 +13,15 @@ class EventLoop;
 class Timer;
 class TimerId;
 
-class TimerQueue
+class TimerQueue // noncopyable
 {
   using Entry = std::pair<muduo::Timestamp, Timer *>;
   using TimerList = std::set<Entry>;
   using TimerCallback = std::function<void()>;
 private:
+  TimerQueue (const TimerQueue &) = delete;
+  TimerQueue &operator=(const TimerQueue &) = delete;
+
   EventLoop *loop_;
   const int timerfd_;
   TimerList timers_;

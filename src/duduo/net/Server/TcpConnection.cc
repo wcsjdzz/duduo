@@ -41,6 +41,10 @@ void TcpConnection::setMessageCallback(const MessageCallback &cb){
   messageCallback_ = cb;
 }
 
+void TcpConnection::setCloseCallback(const CloseCallback &cb){
+  closeCallback_ = cb;
+}
+
 void TcpConnection::setWriteCompleteCallback(const WriteCompleteCallback &cb){
   writeCompleteCallback_ = cb;
 }
@@ -58,7 +62,6 @@ void TcpConnection::handleRead(muduo::Timestamp receiveTime){
   if(retSz > 0){
     // std::string msg(buf, retSz);
     // shared_from_this() makes TCP connection more safe
-    LOG_INFO << "A new MessageCallback is comming";
     messageCallback_(shared_from_this(), &inputBuffer_, receiveTime);
   } else if(retSz == 0){
     handleClose();
@@ -75,16 +78,16 @@ void TcpConnection::handleWrite(){
   // and the left msg is stored in outputBuffer_
   loop_->assertInLoopThread();
   if(!sockChannel_->isWriting()){
-    LOG_TRACE << "TcpConnection::handleWrite - Connection is down";
+    LOG_TRACE << "TcpConnection::handleWrite() - have shutdown the write endian";
   } else {
-    size_t leftMsgSz = outputBuffer_.readableBytes();
+    ssize_t leftMsgSz = outputBuffer_.readableBytes();
     ssize_t ret = ::write(socket_->fd(), outputBuffer_.peek(), leftMsgSz);
     if(ret < 0){
       LOG_ERROR << "TcoConnection::handleWrite";
     }
     outputBuffer_.retrieve(ret);
     if(ret == leftMsgSz){ // or outputBuffer_.readableBytes() == 0
-      sockChannel_->disableWrite();
+      sockChannel_->disableWrite(); // Level Trigger, must disable write after writing
       if(writeCompleteCallback_){
         loop_->queueInLoop(std::bind(&TcpConnection::writeCompleteCallback_, shared_from_this()));
       }
@@ -97,19 +100,21 @@ void TcpConnection::handleWrite(){
 
 void TcpConnection::handleClose(){
   loop_->assertInLoopThread();
-  assert(state_ == kConnected);
+  assert(state_ == kConnected || state_ == kDisconnecting);
   LOG_TRACE << "TcpConnection (" << name() << ") is being closed";
-  // setState(kDisconnected); // state should be disconnected in connectionDestryed()
+  setState(kDisconnected); // state should be disconnected in connectionDestryed()
   sockChannel_->disableAll();
-  closeCallback_(shared_from_this());
+  closeCallback_(shared_from_this()); // closeCallback_ is binded to TcpServer::removeChannel
 }
 
 void TcpConnection::send(const std::string &msg){
-  if(loop_->isInLoopThread()){
-    sendInLoop(msg);
-  } else {
-    // shared_from_this shoud be better than `this`
-    loop_->runInLoop(std::bind(&TcpConnection::sendInLoop, shared_from_this(), msg));
+  if(state_ == kConnected){
+    if(loop_->isInLoopThread()){
+      sendInLoop(msg);
+    } else {
+      // shared_from_this shoud be better than `this`
+      loop_->runInLoop(std::bind(&TcpConnection::sendInLoop, shared_from_this(), msg));
+    }
   }
 }
 
@@ -137,9 +142,8 @@ void TcpConnection::sendInLoop(const std::string &msg){
 }
 
 void TcpConnection::shutdown(){
-  if(loop_->isInLoopThread()){
-    shutdownInLoop();
-  } else {
+  if(state_ == kConnected){
+    setState(kDisconnecting);
     loop_->runInLoop(std::bind(&TcpConnection::shutdownInLoop, shared_from_this()));
   }
 }
@@ -149,6 +153,7 @@ void TcpConnection::shutdownInLoop(){
   if(!sockChannel_->isWriting()){
     socket_->shutdownWrite();
   }
+  LOG_INFO << "TCP connection status is " << state_;
 }
 
 void TcpConnection::handleError(){
@@ -165,10 +170,10 @@ void TcpConnection::connectionEstablished(){
 
 void TcpConnection::connectionDestryed(){
   loop_->assertInLoopThread();
-  assert(state_ == kConnected);
-  setState(kDisconnected);
-  sockChannel_->disableAll();
-  connectionCallback_(shared_from_this()); // why calling this callback?
+  if(state_ == kConnected){ // means `connectionDestryed` could be called without calling `handleClose`
+    setState(kDisconnected);
+    sockChannel_->disableAll();
+  }
   sockChannel_->remove(); // calling EventLoop->removeChannel()
 }
 

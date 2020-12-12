@@ -31,7 +31,7 @@ void Channel::handleEvents(const muduo::Timestamp &now) {
     if(errorCallback_) errorCallback_();
   }
   if( (revents_&POLLHUP) && !(revents_&POLLIN) ){
-    LOG_WARN << "Channel - handling POLLHUP event";
+    LOG_WARN << "Channel::handleEvents() - handling POLLHUP event";
     if(closeCallback_) closeCallback_();
   }
   if(revents_ & (POLLIN | POLLPRI | POLLRDHUP)){

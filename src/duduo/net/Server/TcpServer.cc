@@ -25,8 +25,13 @@ TcpServer::TcpServer(EventLoop *loop,
       std::bind(&TcpServer::onNewConnection, this, _1, _2));
 }
 
-TcpServer::~TcpServer(){
-
+TcpServer::~TcpServer(){ // Server should close its TCP connection
+  loop_->assertInLoopThread();
+  for(auto &conn: connections_){
+    auto tmp = conn.second; // use local stack variable is more safe
+    conn.second.reset();
+    tmp->getLoop()->runInLoop(std::bind(&TcpConnection::connectionDestryed, tmp));
+  }
 }
 
 void TcpServer::setMessageCallback(const MessageCallback &cb){

@@ -42,10 +42,9 @@ TimerId TimerQueue::addTimer(const TimerCallback cb,
 
 void TimerQueue::addTimerInLoop(Timer *timer){
   loop_->assertInLoopThread();
-  auto isEarliest = insert(timer);
-  if(isEarliest){
+  auto isEarliestTimer = insert(timer);
+  if(isEarliestTimer){
     resetTimerfd(timer->expiration());
-    //printf("addtimer done\n");
   }
 }
 
@@ -57,7 +56,6 @@ TimerQueue::TimerQueue(EventLoop *loop):
 {
   timerfdChannel_.setReadCallback(std::bind(&TimerQueue::handleRead, this));
   timerfdChannel_.enableRead(); // update timerfd Channel to Poller
-  //printf("::TimerQueue done\n");
 }
 
 TimerQueue::~TimerQueue(){
@@ -74,9 +72,7 @@ void TimerQueue::handleRead(){
   for(auto &expired: expiredList){
     expired.second->run();
   }
-  //printf("runned expired timer\n");
   reset(expiredList, now);
-  //printf("reset done\n");
 }
 
 void TimerQueue::reset(std::vector<Entry> &expired, muduo::Timestamp now){
@@ -113,6 +109,5 @@ void TimerQueue::resetTimerfd(muduo::Timestamp when){
   bzero(&old_timerspec, sizeof old_timerspec);
   bzero(&new_timerspec, sizeof new_timerspec);
   new_timerspec.it_value = getTimeDiffFromNow(when);
-  //printf("timer diff from now is %ld\n", new_timerspec.it_value.tv_sec);
   ::timerfd_settime(timerfd_, 0, &new_timerspec, &old_timerspec);;
 }

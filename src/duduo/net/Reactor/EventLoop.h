@@ -2,7 +2,8 @@
 #define EVENTLOOP_H
 
 #include <muduo/base/Timestamp.h>
-#include <muduo/base/Mutex.h>
+#include "TimerId.h"
+#include <mutex>
 
 #include <vector>
 #include <memory>
@@ -41,7 +42,7 @@ private:
 
   void executeQueueFunctions();
 
-  muduo::MutexLock mutex_;
+  std::mutex mutex_; // use the std library mutex
 
 public:
   EventLoop();

@@ -2,8 +2,8 @@
 #define TIMER_H
 
 #include <functional>
+#include <atomic>
 #include <muduo/base/Timestamp.h>
-#include <muduo/base/Atomic.h>
 
 class Timer
 {
@@ -14,7 +14,7 @@ private:
   double interval_;
   bool repeat_;
   int64_t sequence_;
-  static muduo::AtomicInt64 sequenceNumGenerator_;
+  static std::atomic<int64_t> sequenceNumGenerator_; // use std library atomic
 
 public:
   Timer(const TimerCallback &cb, muduo::Timestamp when, double itv);
@@ -23,7 +23,7 @@ public:
   muduo::Timestamp expiration() const {
     return expiration_;
   }
-  double interval() {
+  double interval() const {
     return interval_;
   }
   int64_t sequence() const {
@@ -34,9 +34,7 @@ public:
   }
 
   void run() {
-    //printf("run callback\n");
     callback_();
-    //printf("callback runned\n");
   }
 
   void restart(muduo::Timestamp when);

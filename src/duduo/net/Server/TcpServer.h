@@ -6,20 +6,22 @@
 #include <functional>
 #include <string>
 #include <muduo/net/InetAddress.h>
-#include <boost/noncopyable.hpp>
 
 #include "TcpConnection.h"
 
 class Acceptor;
 class EventLoop;
 
-class TcpServer : boost::noncopyable
+class TcpServer // noncopyable
 {
   using ConnectionCallback = std::function<void (const TcpConnectionPtr &)>;
   using MessageCallback = std::function<void (const TcpConnectionPtr &, muduo::net::Buffer *, muduo::Timestamp)>;
   using WriteCompleteCallback = std::function<void (const TcpConnectionPtr &)>;
   using HighWaterCallback = std::function<void (const TcpConnectionPtr &)>;
 private:
+  TcpServer(const TcpServer &) = delete;
+  TcpServer &operator=(const TcpServer &) = delete;
+
   EventLoop *loop_;
   const std::string name_;
   muduo::net::InetAddress addr_;

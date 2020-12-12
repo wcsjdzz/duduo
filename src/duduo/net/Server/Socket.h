@@ -1,19 +1,20 @@
 #ifndef SOCKET_H
 #define SOCKET_H
 
-#include "muduo/base/noncopyable.h"
 #include <muduo/net/InetAddress.h>
-#include <boost/noncopyable.hpp>
 
-class Socket: boost::noncopyable
+class Socket
 {
 private:
+  Socket(const Socket &) = delete;
+  Socket &operator=(const Socket &) = delete;
+
   const int sockfd_;
 
 public:
   int fd() const { return sockfd_; }
   void bindAddress(const muduo::net::InetAddress& localaddr);
-  void listen();
+  void listen(); // `::listen()` peer connection request
   void shutdownWrite();
 
   // fill the peeraddr and return peer connection fd
