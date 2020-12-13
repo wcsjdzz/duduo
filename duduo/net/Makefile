@@ -12,7 +12,7 @@ LDFLAGS = -L$(MUDUO_LIB) -lmuduo_net -lmuduo_base -lpthread -lrt
 # ********************Dependency List****************************************
 
 SRC=./Reactor
-ReactorDependency = $(SRC)/EventLoop.cc $(SRC)/Channel.cc $(SRC)/Poller.cc $(SRC)/Timer.cc $(SRC)/TimerQueue.cc
+ReactorDependency = $(SRC)/EventLoop.cc $(SRC)/Channel.cc $(SRC)/Poller.cc $(SRC)/Timer.cc $(SRC)/TimerQueue.cc $(SRC)/EventLoopThread.cc $(SRC)/EventLoopThreadPool.cc
 
 timerDependency = $(ReactorDependency) $(SRC)/main_timer.cc
 

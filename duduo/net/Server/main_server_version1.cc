@@ -1,7 +1,5 @@
-// #include "TcpServer.h"
-// #include "../Reactor/EventLoop.h"
-#include <muduo/net/EventLoop.h>
-#include <muduo/net/TcpServer.h>
+#include "TcpServer.h"
+#include "../Reactor/EventLoop.h"
 using namespace muduo::net;
 
 EventLoop *g_loop = nullptr;
@@ -30,10 +28,11 @@ int main(int argc, char *argv[])
   EventLoop loop;
   g_loop = &loop;
   muduo::net::InetAddress addr(45670);
-  TcpServer server(&loop, addr, "XXX server");
+  TcpServer server(&loop, addr);
   server.setConnectionCallback(&connectionFunc);
   server.setMessageCallback(&messageFunc);
   // loop.runAfter(30, quitFunc);
+  server.setThreadNum(4);
   server.start();
   loop.loop();
   return 0;
