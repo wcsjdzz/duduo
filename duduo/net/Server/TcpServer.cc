@@ -23,7 +23,7 @@ TcpServer::TcpServer(EventLoop *loop,
   loop_(loop),
   name_(serverDefaultName()),
   addr_(addr),
-  acceptor_(new Acceptor (loop, addr)),
+  acceptor_(std::make_unique<Acceptor>(loop, addr)),
   connections_(),
   threadPool_(std::make_unique<EventLoopThreadPool>(loop, name_)),
   started(0)

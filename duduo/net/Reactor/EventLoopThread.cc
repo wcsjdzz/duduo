@@ -19,7 +19,6 @@ EventLoopThread::EventLoopThread(const ThreadInitCallback &cb,
   name_(name),
   initCallback_(cb),
   loop_(nullptr),
-  thread_(std::bind(&EventLoopThread::threadFunc, this)),
   mutex_(),
   condition_()
 {
@@ -32,8 +31,8 @@ EventLoopThread::~EventLoopThread()
 }
 
 EventLoop *EventLoopThread::startLoop(){
-  assert(!thread_.started());
-  thread_.start();
+  std::thread IOthread(std::bind(&EventLoopThread::threadFunc, this));
+  IOthread.detach();
   {
     std::unique_lock<std::mutex> lk(mutex_);
     condition_.wait(lk, [this](){return loop_;});
