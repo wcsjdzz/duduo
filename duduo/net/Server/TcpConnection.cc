@@ -10,7 +10,7 @@ TcpConnection::TcpConnection(EventLoop *loop,
                 const muduo::net::InetAddress &peer,
                 int sockfd):
   loop_(loop),
-  state_(kConnecting),
+  state_(connState::kConnecting),
   name_(name),
   localAddr_(local),
   peerAddr_(peer),
@@ -30,7 +30,7 @@ TcpConnection::TcpConnection(EventLoop *loop,
 TcpConnection::~TcpConnection(){
 
   // connectionDestryed(); // call this function in the last line of dtor
-  assert(state_ == kDisconnected);
+  assert(state_ == connState::kDisconnected);
 }
 
 void TcpConnection::setConnectionCallback(const ConnectionCallback &cb){
@@ -91,7 +91,7 @@ void TcpConnection::handleWrite(){
       if(writeCompleteCallback_){
         loop_->queueInLoop(std::bind(&TcpConnection::writeCompleteCallback_, shared_from_this()));
       }
-      if(state_ == kDisconnecting){ // only when msg has send over then WR can be shut down
+      if(state_ == connState::kDisconnecting){ // only when msg has send over then WR can be shut down
         shutdownInLoop();
       } 
     }
@@ -100,15 +100,15 @@ void TcpConnection::handleWrite(){
 
 void TcpConnection::handleClose(){
   loop_->assertInLoopThread();
-  assert(state_ == kConnected || state_ == kDisconnecting);
+  assert(state_ == connState::kConnected || state_ == connState::kDisconnecting);
   LOG_TRACE << "TcpConnection (" << name() << ") is being closed";
-  setState(kDisconnected); // state should be disconnected in connectionDestryed()
+  setState(connState::kDisconnected); // state should be disconnected in connectionDestryed()
   sockChannel_->disableAll();
   closeCallback_(shared_from_this()); // closeCallback_ is binded to TcpServer::removeChannel
 }
 
 void TcpConnection::send(const std::string &msg){
-  if(state_ == kConnected){
+  if(state_ == connState::kConnected){
     if(loop_->isInLoopThread()){
       sendInLoop(msg);
     } else {
@@ -142,8 +142,8 @@ void TcpConnection::sendInLoop(const std::string &msg){
 }
 
 void TcpConnection::shutdown(){
-  if(state_ == kConnected){
-    setState(kDisconnecting);
+  if(state_ == connState::kConnected){
+    setState(connState::kDisconnecting);
     loop_->runInLoop(std::bind(&TcpConnection::shutdownInLoop, shared_from_this()));
   }
 }
@@ -153,7 +153,7 @@ void TcpConnection::shutdownInLoop(){
   if(!sockChannel_->isWriting()){
     socket_->shutdownWrite();
   }
-  LOG_INFO << "TCP connection status is " << state_;
+  LOG_INFO << "TCP connection status is " << static_cast<int>(state_);
 }
 
 void TcpConnection::handleError(){
@@ -162,7 +162,7 @@ void TcpConnection::handleError(){
 
 void TcpConnection::connectionEstablished(){
   loop_->assertInLoopThread();
-  setState(kConnected);
+  setState(connState::kConnected);
   sockChannel_->enableRead(); // this is very important
   // once the connection is established, system should call this connection callback
   connectionCallback_(shared_from_this()); 
@@ -170,8 +170,8 @@ void TcpConnection::connectionEstablished(){
 
 void TcpConnection::connectionDestryed(){
   loop_->assertInLoopThread();
-  if(state_ == kConnected){ // means `connectionDestryed` could be called without calling `handleClose`
-    setState(kDisconnected);
+  if(state_ == connState::kConnected){ // means `connectionDestryed` could be called without calling `handleClose`
+    setState(connState::kDisconnected);
     sockChannel_->disableAll();
   }
   sockChannel_->remove(); // calling EventLoop->removeChannel()

@@ -31,19 +31,26 @@ class TcpConnection : // noncopyable
   public std::enable_shared_from_this<TcpConnection>
 {
   // kDisconnecting - LIKE POLLRDHUP, the write endian is closed
-  enum StateEnum {kConnecting, kConnected, kDisconnecting, kDisconnected};
-  using ConnectionCallback = std::function<void (const TcpConnectionPtr &)>;
-  // using MessageCallback = std::function<void (const TcpConnectionPtr &, const std::string &)>;
-  using MessageCallback = std::function<void (const TcpConnectionPtr &, muduo::net::Buffer *, muduo::Timestamp)>;
-  using CloseCallback = std::function<void (const TcpConnectionPtr &)>;
-  using WriteCompleteCallback = std::function<void (const TcpConnectionPtr &)>;
-  using HighWaterCallback = std::function<void (const TcpConnectionPtr &)>;
+  enum class connState {kConnecting, kConnected, kDisconnecting, kDisconnected};
+  // using ConnectionCallback = std::function<void (const TcpConnectionPtr &)>;
+  // // using MessageCallback = std::function<void (const TcpConnectionPtr &, const std::string &)>;
+  // using MessageCallback = std::function<void (const TcpConnectionPtr &, muduo::net::Buffer *, muduo::Timestamp)>;
+  // using CloseCallback = std::function<void (const TcpConnectionPtr &)>;
+  // using WriteCompleteCallback = std::function<void (const TcpConnectionPtr &)>;
+  // using HighWaterCallback = std::function<void (const TcpConnectionPtr &)>;
+  template<typename ...T>
+    using Callback = std::function<void(const TcpConnectionPtr &, T...)>;
+  using ConnectionCallback = Callback<>;
+  using MessageCallback = Callback<muduo::net::Buffer *, muduo::Timestamp>;
+  using CloseCallback = Callback<>;
+  using WriteCompleteCallback = Callback<>;
+  using HighWaterCallback = Callback<>;
 private:
   TcpConnection (const TcpConnection &) = delete;
   TcpConnection &operator=(const TcpConnection &) = delete;
 
   EventLoop *loop_;
-  StateEnum state_;
+  connState state_;
   const std::string name_;
   muduo::net::InetAddress localAddr_, peerAddr_;
   std::unique_ptr<Socket> socket_;
@@ -89,7 +96,7 @@ public:
   void setWriteCompleteCallback(const WriteCompleteCallback &cb);
   void setHighWaterCallback(const WriteCompleteCallback &cb);
 
-  void setState(const StateEnum &st){
+  void setState(const connState &st){
     state_ = st;
   }
   void setTcpNoDealy(bool on);

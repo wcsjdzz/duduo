@@ -16,10 +16,12 @@ class EventLoopThreadPool;
 
 class TcpServer // noncopyable
 {
-  using ConnectionCallback = std::function<void (const TcpConnectionPtr &)>;
-  using MessageCallback = std::function<void (const TcpConnectionPtr &, muduo::net::Buffer *, muduo::Timestamp)>;
-  using WriteCompleteCallback = std::function<void (const TcpConnectionPtr &)>;
-  using HighWaterCallback = std::function<void (const TcpConnectionPtr &)>;
+  template<typename ...T>
+    using Callback = std::function<void(const TcpConnectionPtr &, T...)>;
+  using ConnectionCallback = Callback<>;
+  using MessageCallback = Callback<muduo::net::Buffer *, muduo::Timestamp>;
+  using WriteCompleteCallback = Callback<>;
+  using HighWaterCallback = Callback<>;
   using ThreadInitCallback = std::function<void(EventLoop *)>;
 private:
   TcpServer(const TcpServer &) = delete;

@@ -11,11 +11,18 @@ class EventLoop;
 //           manage file descriptor and corresponding event callback
 class Channel // noncopyable
 {
-  using EventCallback = std::function<void()>;
-  using WriteCallback = EventCallback;
-  using ErrorCallback = EventCallback;
-  using CloseCallback = EventCallback;
-  using ReadEventCallback = std::function<void (muduo::Timestamp receiveTime)>;
+  template<typename ...T>
+    using Callback = std::function<void(T...)>;
+  // using EventCallback = std::function<void()>;
+  // using WriteCallback = EventCallback;
+  // using ErrorCallback = EventCallback;
+  // using CloseCallback = EventCallback;
+  // using ReadEventCallback = std::function<void (muduo::Timestamp receiveTime)>;
+  using EventCallback = Callback<>;
+  using WriteCallback = Callback<>;
+  using ErrorCallback = Callback<>;
+  using CloseCallback = Callback<>;
+  using ReadEventCallback = Callback<muduo::Timestamp>;
 private:
   Channel(const Channel &) = delete;
   Channel &operator=(const Channel &) = delete;
