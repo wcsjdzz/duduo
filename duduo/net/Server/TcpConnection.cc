@@ -14,8 +14,8 @@ TcpConnection::TcpConnection(EventLoop *loop,
   name_(name),
   localAddr_(local),
   peerAddr_(peer),
-  socket_(new Socket(sockfd)),
-  sockChannel_(new Channel(loop, sockfd)),
+  socket_(std::make_unique<Socket>(sockfd)),
+  sockChannel_(std::make_unique<Channel>(loop, sockfd)),
   inputBuffer_(),
   outputBuffer_()
 {
@@ -141,7 +141,7 @@ void TcpConnection::sendInLoop(const std::string &msg){
   }
 }
 
-void TcpConnection::shutdown(){
+void TcpConnection::shutdown(){ // send `FIN` - shutdown() here is used to keep the half-connection status
   if(state_ == connState::kConnected){
     setState(connState::kDisconnecting);
     loop_->runInLoop(std::bind(&TcpConnection::shutdownInLoop, shared_from_this()));

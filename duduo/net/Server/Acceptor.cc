@@ -31,7 +31,7 @@ void Acceptor::listen(){
 
 void Acceptor::handleRead(){
   muduo::net::InetAddress addr; // this is the perr address
-  int connfd = socket_->accept(&addr);
+  int connfd = socket_->accept(&addr); // connected fd
   if(connfd < 0){
     LOG_FATAL << "Acceptor - socket accept failed";
     return ;

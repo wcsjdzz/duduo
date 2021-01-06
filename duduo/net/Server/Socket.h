@@ -9,7 +9,7 @@ private:
   Socket(const Socket &) = delete;
   Socket &operator=(const Socket &) = delete;
 
-  const int sockfd_;
+  const int sockfd_; // listening socket fd
 
 public:
   int fd() const { return sockfd_; }

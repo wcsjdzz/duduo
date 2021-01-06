@@ -30,7 +30,7 @@ using TcpConnectionPtr = std::shared_ptr<TcpConnection>;
 class TcpConnection : // noncopyable
   public std::enable_shared_from_this<TcpConnection>
 {
-  // kDisconnecting - LIKE POLLRDHUP, the write endian is closed
+  // kDisconnecting - LIKE POLLRDHUP, the write endian is closed - half-close status
   enum class connState {kConnecting, kConnected, kDisconnecting, kDisconnected};
   // using ConnectionCallback = std::function<void (const TcpConnectionPtr &)>;
   // // using MessageCallback = std::function<void (const TcpConnectionPtr &, const std::string &)>;
